@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { motion, useInView, useMotionValue, useTransform } from 'framer-motion';
+import profileImg from '../assets/profilee.jpg';
 
 const About = () => {
   const ref = useRef(null);
@@ -184,7 +185,7 @@ const About = () => {
                     }}
                   >
                     <motion.img 
-                      src="/src/assets/profilee.jpg" 
+                      src={profileImg} 
                       alt="Chandru K Profile" 
                       className="w-full h-full object-cover filter grayscale hover:grayscale-0 transition-all duration-500"
                       style={{ transform: "translateZ(20px)" }}
