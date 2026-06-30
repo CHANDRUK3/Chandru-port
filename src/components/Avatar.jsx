@@ -1,219 +1,196 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
+import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
+import profileImg from '../assets/mee.jpg';
 
-// --- Style-derived Constants ---
-// Head
-const HEAD_WIDTH = 100;
-const HEAD_HEIGHT = 100;
-const HEAD_TOP_OFFSET = 50; // From container top to head top
-// Eye Sockets (relative to Head)
-const EYE_SOCKET_WIDTH = 30;
-const EYE_SOCKET_HEIGHT = 35;
-const EYE_SOCKET_TOP_PERCENT = 0.30; // 30% from head top
-const EYE_SOCKET_LEFT_PERCENT = 0.20; // 20% from head left for left eye
-const EYE_SOCKET_RIGHT_PERCENT = 0.20; // 20% from head right for right eye
+export default function Avatar() {
+  const [isEntranceDone, setIsEntranceDone] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
-// Calculated Eye Socket positions relative to Head's top-left corner
-const LEFT_EYE_SOCKET_TOP = HEAD_HEIGHT * EYE_SOCKET_TOP_PERCENT;
-const LEFT_EYE_SOCKET_LEFT = HEAD_WIDTH * EYE_SOCKET_LEFT_PERCENT;
+  // 1. Scroll Parallax setup using Framer Motion useScroll
+  const { scrollY } = useScroll();
+  
+  // Maps page scroll to the requested transformations:
+  // translateY: 0 -> -40px
+  // rotateX: 0 -> -8deg
+  // scale: 1 -> 1.05
+  const scrollYTrans = useTransform(scrollY, [0, 1000], [0, -40]);
+  const scrollRotateXTrans = useTransform(scrollY, [0, 1000], [0, -8]);
+  const scrollScaleTrans = useTransform(scrollY, [0, 1000], [1, 1.05]);
 
-const RIGHT_EYE_SOCKET_TOP = HEAD_HEIGHT * EYE_SOCKET_TOP_PERCENT;
-const RIGHT_EYE_SOCKET_LEFT = HEAD_WIDTH * (1 - EYE_SOCKET_RIGHT_PERCENT) - EYE_SOCKET_WIDTH;
+  // Spring values for fluid and responsive scroll parallax
+  const yParallax = useSpring(scrollYTrans, { stiffness: 90, damping: 25 });
+  const rotateXParallax = useSpring(scrollRotateXTrans, { stiffness: 90, damping: 25 });
+  const scaleParallax = useSpring(scrollScaleTrans, { stiffness: 90, damping: 25 });
 
-// Pupils
-const PUPIL_WIDTH = 12;
-const PUPIL_HEIGHT = 12;
+  // Glow scale maps from 1 -> 1.1 on scroll
+  const glowScaleRaw = useTransform(scrollY, [0, 1000], [1, 1.1]);
+  const glowScale = useSpring(glowScaleRaw, { stiffness: 90, damping: 25 });
 
-// Max Pupil Offset
-const MAX_PUPIL_OFFSET_X = (EYE_SOCKET_WIDTH / 2) - (PUPIL_WIDTH / 2);
-const MAX_PUPIL_OFFSET_Y = (EYE_SOCKET_HEIGHT / 2) - (PUPIL_HEIGHT / 2);
+  const handleMouseEnter = () => {
+    if (isEntranceDone) {
+      setIsHovered(true);
+    }
+  };
 
-// Avatar Tilt
-const MAX_AVATAR_TILT_ANGLE = 10;
-
-
-const Avatar = () => {
-  const [leftPupilTransform, setLeftPupilTransform] = useState('translate(-50%, -50%)');
-  const [rightPupilTransform, setRightPupilTransform] = useState('translate(-50%, -50%)');
-  const [avatarTiltTransform, setAvatarTiltTransform] = useState('');
-  const avatarRef = useRef(null);
-
-  useEffect(() => {
-    const handleMouseMove = (event) => {
-      if (!avatarRef.current) return;
-
-      const avatarRect = avatarRef.current.getBoundingClientRect();
-      
-      // --- Avatar Tilt Calculation ---
-      const avatarCenterX = avatarRect.left + avatarRect.width / 2;
-      const avatarCenterY = avatarRect.top + avatarRect.height / 2;
-      const deltaXAvatar = event.clientX - avatarCenterX;
-      const deltaYAvatar = event.clientY - avatarCenterY;
-
-      let rotateY = (deltaXAvatar / (avatarRect.width / 2)) * MAX_AVATAR_TILT_ANGLE;
-      let rotateX = (-deltaYAvatar / (avatarRect.height / 2)) * MAX_AVATAR_TILT_ANGLE;
-
-      rotateX = Math.max(-MAX_AVATAR_TILT_ANGLE, Math.min(MAX_AVATAR_TILT_ANGLE, rotateX));
-      rotateY = Math.max(-MAX_AVATAR_TILT_ANGLE, Math.min(MAX_AVATAR_TILT_ANGLE, rotateY));
-      
-      setAvatarTiltTransform(`perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`);
-
-      // --- Pupil Movement Calculation ---
-      const headActualLeftInContainer = (styles.container.width - HEAD_WIDTH) / 2;
-      const headViewportX = avatarRect.left + headActualLeftInContainer;
-      const headViewportY = avatarRect.top + HEAD_TOP_OFFSET;
-
-      const leftEyeSocketViewportX = headViewportX + LEFT_EYE_SOCKET_LEFT;
-      const leftEyeSocketViewportY = headViewportY + LEFT_EYE_SOCKET_TOP;
-      const leftEyeCenterX = leftEyeSocketViewportX + EYE_SOCKET_WIDTH / 2;
-      const leftEyeCenterY = leftEyeSocketViewportY + EYE_SOCKET_HEIGHT / 2;
-      let deltaXLeft = event.clientX - leftEyeCenterX;
-      let deltaYLeft = event.clientY - leftEyeCenterY;
-      const distanceLeft = Math.sqrt(deltaXLeft * deltaXLeft + deltaYLeft * deltaYLeft);
-      const pupilXLeft = (distanceLeft > 0) ? (deltaXLeft / distanceLeft) * Math.min(distanceLeft, MAX_PUPIL_OFFSET_X) : 0;
-      const pupilYLeft = (distanceLeft > 0) ? (deltaYLeft / distanceLeft) * Math.min(distanceLeft, MAX_PUPIL_OFFSET_Y) : 0;
-      setLeftPupilTransform(`translate(calc(-50% + ${pupilXLeft}px), calc(-50% + ${pupilYLeft}px))`);
-
-      const rightEyeSocketViewportX = headViewportX + RIGHT_EYE_SOCKET_LEFT;
-      const rightEyeSocketViewportY = headViewportY + RIGHT_EYE_SOCKET_TOP;
-      const rightEyeCenterX = rightEyeSocketViewportX + EYE_SOCKET_WIDTH / 2;
-      const rightEyeCenterY = rightEyeSocketViewportY + EYE_SOCKET_HEIGHT / 2;
-      let deltaXRight = event.clientX - rightEyeCenterX;
-      let deltaYRight = event.clientY - rightEyeCenterY;
-      const distanceRight = Math.sqrt(deltaXRight * deltaXRight + deltaYRight * deltaYRight);
-      const pupilXRight = (distanceRight > 0) ? (deltaXRight / distanceRight) * Math.min(distanceRight, MAX_PUPIL_OFFSET_X) : 0;
-      const pupilYRight = (distanceRight > 0) ? (deltaYRight / distanceRight) * Math.min(distanceRight, MAX_PUPIL_OFFSET_Y) : 0;
-      setRightPupilTransform(`translate(calc(-50% + ${pupilXRight}px), calc(-50% + ${pupilYRight}px))`);
-    };
-
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
-
-  const styles = { 
-    container: {
-      width: 180,
-      height: 220,
-      position: 'relative',
-      transform: avatarTiltTransform,
-      transition: 'transform 0.1s ease-out',
-    },
-    head: {
-      width: HEAD_WIDTH,
-      height: HEAD_HEIGHT,
-      backgroundColor: '#cccccc', // Changed from #dddddd
-      borderRadius: '50%',
-      position: 'absolute',
-      top: HEAD_TOP_OFFSET,
-      left: '50%',
-      transform: 'translateX(-50%)',
-      zIndex: 2,
-    },
-    hair: {
-      width: 110,
-      height: 65, // Changed from 60
-      backgroundColor: '#202020',
-      borderRadius: '50px 50px 20px 20px', // Changed from 10px 10px
-      position: 'absolute',
-      top: 22, // Changed from 25
-      left: '50%',
-      transform: 'translateX(-50%)',
-      zIndex: 3,
-      borderTop: '2px solid #1a1a1a', // Added for definition
-    },
-    headphoneBand: {
-      width: 130,
-      height: 30,
-      backgroundColor: '#202020',
-      border: '3px solid #1a1a1a',
-      borderRadius: '30px 30px 0 0',
-      position: 'absolute',
-      top: 12, // Changed from 15
-      left: '50%',
-      transform: 'translateX(-50%)',
-      zIndex: 4,
-    },
-    leftEarcup: {
-      width: 35,
-      height: 45,
-      backgroundColor: '#252525',
-      border: '3px solid #1a1a1a',
-      borderRadius: '12px', // Changed from 10px
-      position: 'absolute',
-      top: 50, // Changed from 55
-      left: 10, 
-      zIndex: 5,
-    },
-    rightEarcup: {
-      width: 35,
-      height: 45,
-      backgroundColor: '#252525',
-      border: '3px solid #1a1a1a',
-      borderRadius: '12px', // Changed from 10px
-      position: 'absolute',
-      top: 50, // Changed from 55
-      right: 10,
-      zIndex: 5,
-    },
-    leftEyeSocket: {
-      width: EYE_SOCKET_WIDTH,
-      height: EYE_SOCKET_HEIGHT,
-      backgroundColor: '#f0f0f0', // Changed from white
-      borderRadius: '40%',
-      position: 'absolute',
-      top: `${EYE_SOCKET_TOP_PERCENT * 100}%`,
-      left: `${EYE_SOCKET_LEFT_PERCENT * 100}%`,
-      zIndex: 1,
-    },
-    rightEyeSocket: {
-      width: EYE_SOCKET_WIDTH,
-      height: EYE_SOCKET_HEIGHT,
-      backgroundColor: '#f0f0f0', // Changed from white
-      borderRadius: '40%',
-      position: 'absolute',
-      top: `${EYE_SOCKET_TOP_PERCENT * 100}%`,
-      right: `${EYE_SOCKET_RIGHT_PERCENT * 100}%`,
-      zIndex: 1,
-    },
-    pupil: {
-      width: PUPIL_WIDTH,
-      height: PUPIL_HEIGHT,
-      backgroundColor: '#202020',
-      borderRadius: '50%',
-      position: 'absolute',
-      top: '50%',
-      left: '50%',
-      transition: 'transform 0.03s linear', // Added for smoothness
-    },
-    shoulders: {
-      width: 160,
-      height: 80,
-      backgroundColor: '#202020',
-      borderRadius: '30px 30px 0 0',
-      position: 'absolute',
-      bottom: 0,
-      left: '50%',
-      transform: 'translateX(-50%)',
-      zIndex: 1,
-    },
+  const handleMouseLeave = () => {
+    setIsHovered(false);
   };
 
   return (
-    <div ref={avatarRef} style={styles.container}>
-      <div style={styles.shoulders}></div>
-      <div style={styles.headphoneBand}></div>
-      <div style={styles.hair}></div>
-      <div style={styles.head}>
-        <div style={styles.leftEyeSocket}>
-          <div style={{...styles.pupil, transform: leftPupilTransform }}></div>
-        </div>
-        <div style={styles.rightEyeSocket}>
-          <div style={{...styles.pupil, transform: rightPupilTransform }}></div>
-        </div>
-      </div>
-      <div style={styles.leftEarcup}></div>
-      <div style={styles.rightEarcup}></div>
-    </div>
-  );
-};
+    <motion.div 
+      initial={{ y: 80, opacity: 0 }}
+      whileInView={{ y: 0, opacity: 1 }}
+      viewport={{ once: true, amount: 0.4 }}
+      transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+      className="relative flex items-center justify-center"
+      style={{ 
+        perspective: '1800px', 
+        transformStyle: 'preserve-3d'
+      }}
+    >
+      {/* Refined Red Ambient Glow behind the image - scales on scroll */}
+      <motion.div
+        className="absolute -inset-20 -z-20 rounded-full opacity-0 blur-[100px]"
+        animate={isEntranceDone ? { opacity: [0.9, 1.05, 0.9] } : { opacity: 1 }}
+        transition={isEntranceDone ? { duration: 8, repeat: Infinity, ease: "easeInOut" } : { duration: 3.0 }}
+        style={{
+          background: 'radial-gradient(circle, rgba(255, 40, 40, 0.18) 0%, rgba(255, 40, 40, 0.08) 35%, transparent 70%)',
+          pointerEvents: 'none',
+          width: '140%',
+          height: '140%',
+          left: '-20%',
+          top: '-20%',
+          scale: glowScale,
+        }}
+      />
 
-export default Avatar;
+      {/* Layer 1: Parallax Scroll Wrapper */}
+      <motion.div
+        style={{ 
+          y: yParallax, 
+          rotateX: rotateXParallax,
+          scale: scaleParallax,
+          transformStyle: 'preserve-3d' 
+        }}
+        className="relative"
+      >
+        {/* Layer 2: 3D Entrance Animation Layer */}
+        <motion.div
+          initial={{ rotateX: 75, rotateY: -25, rotateZ: 8, scale: 0.75, opacity: 0 }}
+          animate={{ rotateX: 0, rotateY: 0, rotateZ: 0, scale: 1, opacity: 1 }}
+          transition={{
+            duration: 3.0,
+            ease: [0.22, 1, 0.36, 1], // exact ease curve
+          }}
+          onAnimationComplete={() => setIsEntranceDone(true)}
+          style={{ transformStyle: 'preserve-3d' }}
+        >
+          {/* Drop Shadow underneath the image (behind portrait, fades slightly as image lifts on hover) */}
+          <motion.div 
+            className="absolute bottom-[-20px] left-[10%] w-[80%] h-4 bg-black rounded-full blur-[18px] pointer-events-none -z-10"
+            style={{
+              transform: 'translateZ(-30px)',
+            }}
+            animate={{ opacity: isHovered ? 0.45 : 0.7, scale: isHovered ? 0.95 : 1 }}
+            transition={{ duration: 0.4 }}
+          />
+
+          {/* Layer 3: Subtle Hover Elevation Layer (No continuous infinite float) */}
+          <motion.div
+            animate={{ y: isHovered ? -8 : 0 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            style={{ transformStyle: 'preserve-3d' }}
+          >
+            {/* Layer 4: Interactive 3D Cursor Tilt & Borderless Portrait Frame */}
+            <motion.div
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+              style={{
+                transformStyle: 'preserve-3d',
+                // Webkit reflection underneath the portrait
+                WebkitBoxReflect: 'below 16px linear-gradient(to bottom, transparent 60%, rgba(0, 0, 0, 0.15) 100%)',
+              }}
+              animate={{
+                rotateX: isHovered ? -2 : 0,
+                rotateY: isHovered ? 3 : 0,
+                scale: isHovered ? 1.03 : 1, // premium hover scale
+              }}
+              transition={{ type: "spring", stiffness: 80, damping: 15 }}
+              className="w-[180px] h-[250px] md:w-[240px] md:h-[330px] lg:w-[280px] lg:h-[390px] rounded-[32px] overflow-hidden cursor-pointer shadow-[0_30px_70px_rgba(0,0,0,0.92)] relative"
+            >
+              {/* Profile Image with subtle vignette and edge softening */}
+              <div 
+                className="relative w-full h-full rounded-[32px] overflow-hidden"
+                style={{ 
+                  transform: 'translateZ(20px)',
+                  transformStyle: 'preserve-3d',
+                }}
+              >
+                <motion.img
+                  src={profileImg}
+                  alt="Profile portrait"
+                  className="w-full h-full object-cover object-center block will-change-transform rounded-[32px]"
+                  style={{
+                    filter: isHovered ? 'grayscale(0%)' : 'grayscale(100%)',
+                    transition: 'filter 700ms cubic-bezier(0.22, 1, 0.36, 1)',
+                  }}
+                  initial={{ scale: 1.15, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 2.5, ease: [0.22, 1, 0.36, 1] }}
+                  whileTap={{ scale: 0.98 }}
+                />
+
+                {/* Sliding Reveal Mask Layer with red sweep edge */}
+                <motion.div
+                  className="absolute inset-0 z-20 pointer-events-none rounded-[32px] overflow-hidden"
+                  initial={{ x: '0%' }}
+                  animate={{ x: '100%' }}
+                  transition={{
+                    duration: 2.5,
+                    ease: [0.22, 1, 0.36, 1],
+                  }}
+                  style={{
+                    background: 'linear-gradient(90deg, transparent 0%, rgba(255, 40, 40, 0.5) 8%, #101010 18%, #101010 100%)',
+                    width: '120%',
+                    height: '100%',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                  }}
+                />
+
+                {/* Periodic Subtle Light Sweep Overlay */}
+                <motion.div
+                  className="absolute inset-0 pointer-events-none z-10"
+                  animate={{
+                    x: ['-130%', '130%'],
+                  }}
+                  transition={{
+                    duration: 3.0,
+                    ease: [0.25, 0.46, 0.45, 0.94],
+                    repeat: Infinity,
+                    repeatDelay: 5.0, // sweeps every ~8 seconds
+                  }}
+                  style={{
+                    background: 'linear-gradient(110deg, transparent 35%, rgba(255, 255, 255, 0.0) 42%, rgba(255, 255, 255, 0.18) 50%, rgba(255, 255, 255, 0.0) 58%, transparent 65%)',
+                    width: '200%',
+                    height: '100%',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                  }}
+                />
+                
+                {/* Subtle vignette layout */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-35 pointer-events-none rounded-[32px]" />
+                
+                {/* Inner shadow to soften edges */}
+                <div className="absolute inset-0 border border-black border-opacity-35 rounded-[32px] pointer-events-none shadow-[inset_0_0_15px_rgba(0,0,0,0.7)]" />
+              </div>
+            </motion.div>
+          </motion.div>
+        </motion.div>
+      </motion.div>
+    </motion.div>
+  );
+}

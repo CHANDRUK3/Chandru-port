@@ -44,7 +44,7 @@ const Loader = () => {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.5 }}
         >
-          NITHIN MANDA
+          CHANDRU K
         </motion.p>
       </motion.div>
     </div>

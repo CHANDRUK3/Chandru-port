@@ -16,7 +16,6 @@
 }
 
 html {
-  scroll-behavior: smooth;
   scrollbar-width: thin;
   scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
@@ -97,6 +96,12 @@ body {
   .container-custom {
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
   }
+
+  /* Tight hero layout to match reference spacing */
+  .hero-tight {
+    /* narrower container and minimal left padding to align text closer to viewport */
+    @apply max-w-5xl px-0 md:px-2 lg:px-4;
+  }
   
   .section-padding {
     @apply py-16 md:py-24;
@@ -120,7 +125,11 @@ body {
   
   /* Nothing-inspired button */
   .nothing-btn {
-    @apply inline-flex items-center px-5 py-2 border border-light border-opacity-30 bg-transparent hover:bg-light hover:bg-opacity-5 transition-all duration-300 font-mono text-sm tracking-wider;
+    @apply inline-flex items-center justify-center px-8 py-4 min-h-[50px] min-w-[160px] border-2 border-white border-opacity-70 bg-gray-900 bg-opacity-50 text-white hover:bg-white hover:bg-opacity-20 hover:text-white hover:border-opacity-100 transition-all duration-300 font-mono text-sm tracking-wider font-medium backdrop-blur-sm;
+    color: #ffffff !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
   
   .social-icon {

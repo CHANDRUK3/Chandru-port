@@ -14,7 +14,7 @@ const Header = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const navItems = ['Home', 'Projects', 'Skills', 'Education', 'Contact'];
+  const navItems = ['Home', 'About', 'Projects', 'Skills', 'Education', 'Contact'];
 
   const headerVariants = {
     initial: { y: -100 },
@@ -50,7 +50,7 @@ const Header = () => {
           className="flex items-center"
         >
           <div className="w-[2px] h-6 bg-light mr-2"></div>
-          <span className="font-mono text-lg tracking-wider">NM</span>
+          <span className="font-mono text-lg tracking-wider">CK</span>
         </motion.div>
 
         {/* Desktop Navigation */}
